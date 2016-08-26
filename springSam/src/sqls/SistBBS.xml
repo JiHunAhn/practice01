@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="SistBBS">
+    <select id="getBBSList" resultType="sist.co.model.SistBBSDTO">
+        select seq, id, ref, step, depth, title, content, wdate, parent, del, readcount from sistbbs order by ref desc, step asc 
+    </select>
+    
+    <insert id="writeBBS" parameterType="sist.co.model.SistBBSDTO">
+        INSERT INTO SISTBBS (SEQ, ID, REF, STEP, DEPTH, TITLE, CONTENT, WDATE, PARENT, DEL, READCOUNT) 
+        VALUES(SEQ_SISTBBS.NEXTVAL, #{id}, (SELECT NVL(MAX(REF), 0)+1 FROM SISTBBS), 0, 0, #{title}, #{content}, SYSDATE, 0, 0, 0) 
+     </insert>
+     
+     <select id="getBBS" parameterType="sist.co.model.SistBBSDTO" resultType="sist.co.model.SistBBSDTO">
+          SELECT SEQ, ID, REF, STEP, DEPTH, TITLE, CONTENT, WDATE, PARENT, DEL, READCOUNT FROM SISTBBS WHERE SEQ=#{seq}
+     </select>
+     
+     <update id="readcount" parameterType="java.lang.Integer">
+          UPDATE SISTBBS SET READCOUNT=READCOUNT+1 WHERE SEQ=#{seq}
+     </update>
+     
+     <update id="bbsupdate" parameterType="sist.co.model.SistBBSDTO">
+          UPDATE SISTBBS SET TITLE=#{title}, CONTENT=#{content} WHERE SEQ=#{seq}
+     </update>
+     
+     <update id="bbsdelete" parameterType="java.lang.Integer" > 
+          UPDATE SISTBBS SET DEL=1 WHERE SEQ=#{seq}
+     </update>
+     
+    <select id="getBBSCount" parameterType="sist.co.model.SistBBSParam" resultType="java.lang.Integer">
+          SELECT NVL(count(*), 0) AS cnt FROM SISTBBS WHERE 1=1
+          <if test="s_category !='' and s_category !=null and s_keyword !='' and s_keyword !=null">
+             <if test="s_category =='title'">AND TITLE LIKE '%' || #{s_keyword} || '%'</if> 
+             <if test="s_category =='contents'">AND CONTENT LIKE '%' || #{s_keyword} || '%'</if> 
+          </if> 
+     </select>
+     
+     <select id="getBBSPagingList" parameterType="sist.co.model.SistBBSParam" resultType="sist.co.model.SistBBSDTO">
+			SELECT SEQ, ID, REF, STEP, DEPTH, TITLE, CONTENT, WDATE, PARENT, DEL, READCOUNT
+			FROM ( SELECT ROW_NUMBER() OVER (ORDER BY  REF DESC, STEP ASC) as rnum,	SEQ, ID, REF, STEP, DEPTH, TITLE, CONTENT, WDATE, PARENT, DEL, READCOUNT 
+			FROM SISTBBS WHERE 1 = 1 
+	    <if test="s_category != '' and s_category != null and s_keyword != '' and s_keyword != null">
+			<if test="s_category == 'title'"> AND TITLE like '%'||#{s_keyword}||'%'</if>	
+			<if test="s_category == 'contents'"> AND CONTENT like '%'||#{s_keyword}||'%'</if>	
+		</if>
+			 ) A WHERE rnum between ${start} AND ${end} 
+	</select>
+	
+	<update id="replyBBSUpdate" parameterType="sist.co.model.SistBBSDTO">
+	     	UPDATE SISTBBS SET STEP=STEP+1 WHERE REF=(SELECT REF FROM SISTBBS WHERE SEQ=#{seq})
+	     	AND STEP>(SELECT STEP FROM SISTBBS WHERE SEQ=#{seq})	
+	</update>
+          
+    <insert id="replyBBSInsert" parameterType="sist.co.model.SistBBSDTO">
+           INSERT INTO SISTBBS(SEQ, ID, REF, STEP, DEPTH, TITLE, CONTENT, WDATE, PARENT, DEL, READCOUNT)
+           VALUES(SEQ_SISTBBS.NEXTVAL, #{id}, (SELECT REF FROM SISTBBS WHERE SEQ=#{seq}),  
+           (SELECT STEP FROM SISTBBS WHERE SEQ=#{seq})+1, (SELECT DEPTH FROM SISTBBS WHERE SEQ=#{seq})+1,
+           #{title}, #{content}, SYSDATE, #{seq}, 0, 0)
+    </insert>
+     
+
+ 
+ 
+   </mapper>

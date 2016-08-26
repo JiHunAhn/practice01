@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="SistPoll">
+      <select id="getPollAllList" resultType="sist.co.model.SistPollDTO">
+           SELECT POLLID, ID, QUESTION, SDATE, EDATE, ITEMCOUNT, POLLTOTAL, REGDATE FROM SISTPOLL ORDER BY EDATE DESC    
+      </select>
+      
+      <select id="isVote" parameterType="sist.co.model.SistVoter" resultType="java.lang.Integer">
+          SELECT COUNT(*) FROM SISTVOTER
+          WHERE POLLID=#{pollid} AND ID=#{id}
+      
+      </select>
+      
+      <insert id="makePoll" parameterType="sist.co.model.SistPollDTO">
+         INSERT INTO SISTPOLL 
+         (POLLID, ID, QUESTION, SDATE, EDATE, ITEMCOUNT, POLLTOTAL, REGDATE)
+         VALUES(SEQ_SIST_POLL.NEXTVAL, #{id}, #{question}, #{sdate}, #{edate}, #{itemcount}, 0, SYSDATE) 
+      </insert>
+      
+       <insert id="makePollSub" parameterType="sist.co.model.SistPollSub">
+          INSERT INTO SISTPOLLSUB
+          (POLLSUBID, POLLID, ANSWER, PCOUNT)
+          VALUES(SEQ_SIST_POLLSUB.NEXTVAL, (SELECT NVL(MAX(POLLID), 0) FROM SISTPOLL), #{answer}, 0) 
+       </insert>
+       
+       <select id="getPoll" parameterType="sist.co.model.SistPollDTO" resultType="sist.co.model.SistPollDTO">
+           SELECT POLLID, ID, QUESTION, SDATE, EDATE, ITEMCOUNT, POLLTOTAL, REGDATE 
+           FROM SISTPOLL
+           WHERE POLLID=#{pollid}
+           
+       </select>
+       
+       <select id="getPollSubList" parameterType="sist.co.model.SistPollDTO" resultType="sist.co.model.SistPollSub">
+           SELECT POLLSUBID, POLLID, ANSWER, PCOUNT 
+           FROM SISTPOLLSUB
+           WHERE POLLID=#{pollid}
+       </select>
+       
+       <insert id="pollingVote" parameterType="sist.co.model.SistVoter">
+       		INSERT 
+       			INTO SISTVOTER(VOTERID, POLLID, POLLSUBID, ID, REGDATE)
+       				VALUES(SEQ_SIST_VOTER.NEXTVAL, #{pollid}, #{pollsubid}, #{id}, SYSDATE)
+       </insert>
+       
+       <update id="pollingPoll" parameterType="sist.co.model.SistVoter">	<!-- POLLTOTAL -->
+       		UPDATE SISTPOLL
+       			SET	POLLTOTAL=POLLTOTAL+1
+       				WHERE POLLID=#{pollid}	
+       </update>
+       
+       <update id="pollingSub" parameterType="sist.co.model.SistVoter">		<!-- ACCOUNT -->
+       		UPDATE SISTPOLLSUB
+       			SET	PCOUNT=PCOUNT+1
+       				WHERE POLLID=#{pollid} AND POLLSUBID=#{pollsubid}
+       </update>
+       
+       
+       
+       
+  
+  	
+  </mapper>
